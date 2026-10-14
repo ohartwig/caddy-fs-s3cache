@@ -3,6 +3,12 @@
 All notable changes to this project are documented here. The format follows
 Keep a Changelog; versions are cut by yasrt from Conventional Commits.
 
+## [1.0.1](https://git.ole-hartwig.eu/ai-ready-platform/platform/caddy-fs-s3cache/compare/v1.0.0...v1.0.1) (2026-10-14)
+
+### :bug: Fixes
+
+* upstream failures reach file_server as bare errors, not PathErrors ([d2463c1](https://git.ole-hartwig.eu/ai-ready-platform/platform/caddy-fs-s3cache/commit/d2463c13229a748e589111696df1320b0714d487))
+
 ## [1.0.0] (2026-10-14)
 
 ### :sparkles: Features
