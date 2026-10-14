@@ -1,0 +1,15 @@
+* text=auto eol=lf
+/Tests export-ignore
+/.gitlab export-ignore
+/.gitlab-ci.yml export-ignore
+/.gitignore export-ignore
+/.gitsigners export-ignore
+/.gitsigners.d export-ignore
+/.markdownlint.jsonc export-ignore
+/.markdownlint-cli2.jsonc export-ignore
+/.mise.toml export-ignore
+/.well-known export-ignore
+/infection.json5 export-ignore
+/lefthook.yml export-ignore
+/phpstan.neon export-ignore
+/phpunit.xml.dist export-ignore

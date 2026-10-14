@@ -1,0 +1,5 @@
+{
+  // .gitlab/ holds the issue and merge request templates synced from
+  // devops/repo-templates; they are overwritten on the next sync anyway.
+  "ignores": [".gitlab/**", "vendor/**", "public/**", "var/**"]
+}
