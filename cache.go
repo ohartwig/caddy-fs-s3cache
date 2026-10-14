@@ -149,9 +149,21 @@ func (c *cache) stat(name string) (fs.FileInfo, error) {
 	}
 	e, err := c.lookup(name)
 	if err != nil {
-		return nil, &fs.PathError{Op: "stat", Path: name, Err: err}
+		return nil, pathError("stat", name, err)
 	}
 	return fileInfo{name: name, size: e.size, modTime: e.modTime}, nil
+}
+
+// pathError wraps the filesystem's own verdicts (not found, invalid name)
+// the way fs.FS callers expect. An upstream failure is returned bare: Caddy's
+// file_server turns any *fs.PathError it does not recognise into a 400, and
+// an unreachable S3 is the server's problem, not the client's -- bare, it
+// becomes a 500 (Stat) or a 503 with Retry-After (Open).
+func pathError(op, name string, err error) error {
+	if errors.Is(err, fs.ErrNotExist) || errors.Is(err, fs.ErrInvalid) || errors.Is(err, fs.ErrPermission) {
+		return &fs.PathError{Op: op, Path: name, Err: err}
+	}
+	return err
 }
 
 func (c *cache) open(name string) (fs.File, error) {
@@ -160,7 +172,7 @@ func (c *cache) open(name string) (fs.File, error) {
 	}
 	e, err := c.lookup(name)
 	if err != nil {
-		return nil, &fs.PathError{Op: "open", Path: name, Err: err}
+		return nil, pathError("open", name, err)
 	}
 	fh, err := os.Open(e.path)
 	if err != nil {
@@ -168,7 +180,7 @@ func (c *cache) open(name string) (fs.File, error) {
 		c.forget(name)
 		e, err = c.lookup(name)
 		if err != nil {
-			return nil, &fs.PathError{Op: "open", Path: name, Err: err}
+			return nil, pathError("open", name, err)
 		}
 		fh, err = os.Open(e.path)
 		if err != nil {
@@ -231,8 +243,15 @@ func (c *cache) fetch(name string) (*entry, error) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
+	started := time.Now()
 	out, err := c.opts.client.GetObject(ctx, in)
 	now := c.now()
+
+	c.opts.logger.Debug("s3cache fetch",
+		zap.String("key", name),
+		zap.Bool("conditional", etag != ""),
+		zap.String("result", fetchResult(err)),
+		zap.Duration("took", time.Since(started)))
 
 	switch {
 	case err == nil:
@@ -370,6 +389,20 @@ func (c *cache) stats() (entries int, size int64) {
 func keyFilename(name string) string {
 	sum := sha256.Sum256([]byte(name))
 	return hex.EncodeToString(sum[:]) + filepath.Ext(name)
+}
+
+// fetchResult names the outcome of one GetObject for the debug log.
+func fetchResult(err error) string {
+	switch {
+	case err == nil:
+		return "200"
+	case isNotModified(err):
+		return "304"
+	case isNotFound(err):
+		return "404"
+	default:
+		return "error"
+	}
 }
 
 func isNotModified(err error) bool {

@@ -373,9 +373,24 @@ func TestServesStaleWhenS3Fails(t *testing.T) {
 	if got := readAll(t, fsys, "a.txt"); got != "cached" {
 		t.Fatalf("expected the stale copy while S3 is down, got %q", got)
 	}
-	// An object we never had cannot be served.
-	if _, err := fsys.Stat("never.txt"); err == nil || errors.Is(err, fs.ErrNotExist) {
+	// An object we never had cannot be served, and the failure must not be
+	// dressed as a *fs.PathError: Caddy's file_server answers 400 for those,
+	// 500/503 for a bare error.
+	_, err := fsys.Stat("never.txt")
+	if err == nil || errors.Is(err, fs.ErrNotExist) {
 		t.Fatalf("an upstream failure must not look like a 404, got %v", err)
+	}
+	var pe *fs.PathError
+	if errors.As(err, &pe) {
+		t.Fatalf("upstream failure must be a bare error, got PathError %v", err)
+	}
+	// Whereas a miss and an invalid name are PathErrors, as fs.FS promises.
+	f.fail.Store(false)
+	if _, err := fsys.Stat("never.txt"); !errors.As(err, &pe) || !errors.Is(err, fs.ErrNotExist) {
+		t.Fatalf("miss must be a PathError wrapping ErrNotExist, got %v", err)
+	}
+	if _, err := fsys.Open("../x"); !errors.As(err, &pe) || !errors.Is(err, fs.ErrInvalid) {
+		t.Fatalf("invalid name must be a PathError wrapping ErrInvalid, got %v", err)
 	}
 }
 
