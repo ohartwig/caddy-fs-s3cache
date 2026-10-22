@@ -3,6 +3,12 @@
 All notable changes to this project are documented here. The format follows
 Keep a Changelog; versions are cut by yasrt from Conventional Commits.
 
+## [1.0.5](https://git.ole-hartwig.eu/ai-ready-platform/platform/caddy-fs-s3cache/compare/v1.0.4...v1.0.5) (2026-10-22)
+
+### :bug: Fixes
+
+* **deps:** update module github.com/aws/aws-sdk-go-v2/service/s3 to v1.114.4 ([714e481](https://git.ole-hartwig.eu/ai-ready-platform/platform/caddy-fs-s3cache/commit/714e481c4b3cb9e170944d3b7804c06784a9182a))
+
 ## [1.0.4](https://git.ole-hartwig.eu/ai-ready-platform/platform/caddy-fs-s3cache/compare/v1.0.3...v1.0.4) (2026-10-22)
 
 ### :repeat: Chores
