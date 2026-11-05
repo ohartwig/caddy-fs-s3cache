@@ -47,11 +47,12 @@ var (
 
 // Defaults applied by Provision when a field is zero.
 const (
-	DefaultCacheMaxSize    int64 = 512 << 20 // 512 MiB
-	DefaultRevalidateAfter       = 60 * time.Second
-	DefaultNegativeTTL           = 30 * time.Second
-	DefaultKeepalive             = 25 * time.Second
-	DefaultMaxIdleConns          = 16
+	DefaultCacheMaxSize       int64 = 512 << 20 // 512 MiB
+	DefaultRevalidateAfter          = 60 * time.Second
+	DefaultNegativeTTL              = 30 * time.Second
+	DefaultNegativeMaxEntries       = 4096
+	DefaultKeepalive                = 25 * time.Second
+	DefaultMaxIdleConns             = 16
 )
 
 // FS is a Caddy virtual filesystem backed by an S3 bucket with a local disk cache.
@@ -92,6 +93,12 @@ type FS struct {
 	// again. Default 30s.
 	NegativeTTL caddy.Duration `json:"negative_ttl,omitempty"`
 
+	// NegativeMaxEntries bounds how many missing keys are remembered; the
+	// oldest miss is forgotten first. Misses carry no bytes, so cache_max_size
+	// does not bound them, and the request path that produces them is
+	// anonymous. Default 4096.
+	NegativeMaxEntries int `json:"negative_max_entries,omitempty"`
+
 	// Keepalive is the interval of a background HeadBucket request that keeps
 	// a TLS connection to S3 open, so the first request after a quiet period
 	// does not pay for a new handshake. 0 disables it. Default 25s.
@@ -129,6 +136,9 @@ func (f *FS) Provision(ctx caddy.Context) error {
 	if f.NegativeTTL == 0 {
 		f.NegativeTTL = caddy.Duration(DefaultNegativeTTL)
 	}
+	if f.NegativeMaxEntries <= 0 {
+		f.NegativeMaxEntries = DefaultNegativeMaxEntries
+	}
 	switch {
 	case f.Keepalive == 0:
 		f.Keepalive = caddy.Duration(DefaultKeepalive)
@@ -155,6 +165,7 @@ func (f *FS) Provision(ctx caddy.Context) error {
 		maxSize:         f.CacheMaxSize,
 		revalidateAfter: time.Duration(f.RevalidateAfter),
 		negativeTTL:     time.Duration(f.NegativeTTL),
+		maxNegative:     f.NegativeMaxEntries,
 		bucket:          f.Bucket,
 		prefix:          f.Prefix,
 		client:          client,
@@ -165,10 +176,11 @@ func (f *FS) Provision(ctx caddy.Context) error {
 	}
 	f.cache = c
 
+	var bg context.Context
+	bg, f.cancel = context.WithCancel(context.Background())
+	go f.sweep(bg, time.Duration(f.NegativeTTL))
 	if f.Keepalive > 0 {
-		var kctx context.Context
-		kctx, f.cancel = context.WithCancel(context.Background())
-		go f.keepalive(kctx, client, time.Duration(f.Keepalive))
+		go f.keepalive(bg, client, time.Duration(f.Keepalive))
 	}
 
 	f.logger.Info("s3cache provisioned",
@@ -178,6 +190,7 @@ func (f *FS) Provision(ctx caddy.Context) error {
 		zap.Int64("cache_max_size", f.CacheMaxSize),
 		zap.Duration("revalidate_after", time.Duration(f.RevalidateAfter)),
 		zap.Duration("negative_ttl", time.Duration(f.NegativeTTL)),
+		zap.Int("negative_max_entries", f.NegativeMaxEntries),
 		zap.Duration("keepalive", time.Duration(f.Keepalive)),
 	)
 	return nil
@@ -230,6 +243,21 @@ func (f *FS) newClient(ctx caddy.Context) (*s3.Client, error) {
 	return client, nil
 }
 
+// sweep forgets expired misses every negative_ttl, so they do not outlive
+// their TTL in a process that stops receiving requests.
+func (f *FS) sweep(ctx context.Context, every time.Duration) {
+	t := time.NewTicker(every)
+	defer t.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-t.C:
+			f.cache.sweepNegatives()
+		}
+	}
+}
+
 func (f *FS) keepalive(ctx context.Context, client *s3.Client, every time.Duration) {
 	t := time.NewTicker(every)
 	defer t.Stop()
@@ -272,6 +300,7 @@ func (f *FS) Stat(name string) (fs.FileInfo, error) {
 //	    negative_ttl <duration>
 //	    keepalive <duration>|off
 //	    max_idle_conns <n>
+//	    negative_max_entries <n>
 //	}
 func (f *FS) UnmarshalCaddyfile(d *caddyfile.Dispenser) error {
 	if !d.Next() { // skip the module name
@@ -344,16 +373,21 @@ func (f *FS) UnmarshalCaddyfile(d *caddyfile.Dispenser) error {
 			case "keepalive":
 				f.Keepalive = caddy.Duration(dur)
 			}
-		case "max_idle_conns":
+		case "max_idle_conns", "negative_max_entries":
+			key := d.Val()
 			var raw string
 			if !d.AllArgs(&raw) {
 				return d.ArgErr()
 			}
 			var n int
 			if _, err := fmt.Sscanf(raw, "%d", &n); err != nil || n <= 0 {
-				return d.Errf("max_idle_conns must be a positive integer")
+				return d.Errf("%s must be a positive integer", key)
 			}
-			f.MaxIdleConns = n
+			if key == "max_idle_conns" {
+				f.MaxIdleConns = n
+			} else {
+				f.NegativeMaxEntries = n
+			}
 		default:
 			return d.Errf("%s is not a valid caddy.fs.s3cache option", d.Val())
 		}

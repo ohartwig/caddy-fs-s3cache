@@ -24,6 +24,7 @@ func TestUnmarshalCaddyfile(t *testing.T) {
 		negative_ttl 15s
 		keepalive off
 		max_idle_conns 8
+		negative_max_entries 500
 	}`)
 	var f FS
 	if err := f.UnmarshalCaddyfile(d); err != nil {
@@ -44,6 +45,9 @@ func TestUnmarshalCaddyfile(t *testing.T) {
 	if f.MaxIdleConns != 8 {
 		t.Fatalf("max_idle_conns: %d", f.MaxIdleConns)
 	}
+	if f.NegativeMaxEntries != 500 {
+		t.Fatalf("negative_max_entries: %d", f.NegativeMaxEntries)
+	}
 }
 
 func TestUnmarshalCaddyfileRejectsUnknownAndInvalid(t *testing.T) {
@@ -57,6 +61,8 @@ func TestUnmarshalCaddyfileRejectsUnknownAndInvalid(t *testing.T) {
  revalidate_after 0 }`,
 		"negative idle conns": `s3cache { bucket b
  max_idle_conns -1 }`,
+		"zero negative cap": `s3cache { bucket b
+ negative_max_entries 0 }`,
 		"use_path_style w/ arg": `s3cache { bucket b
  use_path_style yes }`,
 	}
@@ -79,7 +85,8 @@ func TestProvisionAppliesDefaults(t *testing.T) {
 	}
 	defer func() { _ = f.Cleanup() }()
 	if f.CacheMaxSize != DefaultCacheMaxSize || time.Duration(f.RevalidateAfter) != DefaultRevalidateAfter ||
-		time.Duration(f.NegativeTTL) != DefaultNegativeTTL || time.Duration(f.Keepalive) != DefaultKeepalive || f.MaxIdleConns != DefaultMaxIdleConns {
+		time.Duration(f.NegativeTTL) != DefaultNegativeTTL || time.Duration(f.Keepalive) != DefaultKeepalive || f.MaxIdleConns != DefaultMaxIdleConns ||
+		f.NegativeMaxEntries != DefaultNegativeMaxEntries {
 		t.Fatalf("defaults not applied: %+v", f)
 	}
 	if f.cache == nil {

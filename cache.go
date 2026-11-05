@@ -38,6 +38,7 @@ type cacheOptions struct {
 	maxSize         int64
 	revalidateAfter time.Duration
 	negativeTTL     time.Duration
+	maxNegative     int // bound on remembered misses; <= 0 means DefaultNegativeMaxEntries
 	bucket          string
 	prefix          string
 	client          objectGetter
@@ -55,8 +56,13 @@ type entry struct {
 	modTime   time.Time
 	fetchedAt time.Time // last time S3 confirmed this state (200 or 304)
 	negative  bool
-	elem      *list.Element // position in the LRU list
+	elem      *list.Element // position in lru (positive) or neg (negative)
 }
+
+// maxKeyLength is S3's own limit on an object key, prefix included. A longer
+// name cannot exist in the bucket, so it is refused before S3 is asked and
+// never enters the index.
+const maxKeyLength = 1024
 
 type cache struct {
 	opts cacheOptions
@@ -64,7 +70,8 @@ type cache struct {
 
 	mu      sync.Mutex
 	entries map[string]*entry
-	lru     *list.List // front = most recently used
+	lru     *list.List // positive entries, front = most recently used
+	neg     *list.List // negative entries, front = most recently fetched
 	size    int64      // sum of positive entry sizes
 
 	group singleflight.Group
@@ -76,6 +83,9 @@ func newCache(o cacheOptions) (*cache, error) {
 	}
 	if o.logger == nil {
 		o.logger = zap.NewNop()
+	}
+	if o.maxNegative <= 0 {
+		o.maxNegative = DefaultNegativeMaxEntries
 	}
 	if err := os.MkdirAll(o.dir, 0o700); err != nil {
 		return nil, fmt.Errorf("create cache dir %s: %w", o.dir, err)
@@ -94,6 +104,7 @@ func newCache(o cacheOptions) (*cache, error) {
 		now:     o.now,
 		entries: make(map[string]*entry),
 		lru:     list.New(),
+		neg:     list.New(),
 	}, nil
 }
 
@@ -193,7 +204,7 @@ func (c *cache) open(name string) (fs.File, error) {
 // lookup returns a fresh positive entry for name, fetching or revalidating
 // as needed. Concurrent callers for the same key share one S3 request.
 func (c *cache) lookup(name string) (*entry, error) {
-	if !fs.ValidPath(name) || strings.HasSuffix(name, "/") {
+	if !fs.ValidPath(name) || strings.HasSuffix(name, "/") || len(c.opts.prefix)+len(name) > maxKeyLength {
 		return nil, fs.ErrInvalid
 	}
 	now := c.now()
@@ -201,15 +212,19 @@ func (c *cache) lookup(name string) (*entry, error) {
 	c.mu.Lock()
 	e, ok := c.entries[name]
 	if ok {
-		c.lru.MoveToFront(e.elem)
 		if e.negative {
+			// Negatives stay in fetch order, so the back of neg is always the
+			// oldest and the sweep can stop at the first fresh one.
 			if now.Sub(e.fetchedAt) < c.opts.negativeTTL {
 				c.mu.Unlock()
 				return nil, fs.ErrNotExist
 			}
-		} else if now.Sub(e.fetchedAt) < c.opts.revalidateAfter {
-			c.mu.Unlock()
-			return e, nil
+		} else {
+			c.lru.MoveToFront(e.elem)
+			if now.Sub(e.fetchedAt) < c.opts.revalidateAfter {
+				c.mu.Unlock()
+				return e, nil
+			}
 		}
 	}
 	c.mu.Unlock()
@@ -272,9 +287,13 @@ func (c *cache) fetch(name string) (*entry, error) {
 		c.mu.Lock()
 		defer c.mu.Unlock()
 		c.removeLocked(name)
+		c.sweepNegativesLocked(now)
 		e := &entry{key: name, negative: true, fetchedAt: now}
-		e.elem = c.lru.PushFront(e)
+		e.elem = c.neg.PushFront(e)
 		c.entries[name] = e
+		for c.neg.Len() > c.opts.maxNegative {
+			c.removeLocked(c.neg.Back().Value.(*entry).key)
+		}
 		return nil, fs.ErrNotExist
 
 	default:
@@ -335,8 +354,10 @@ func (c *cache) store(name string, out *s3.GetObjectOutput, now time.Time) (*ent
 	defer c.mu.Unlock()
 	if prev := c.entries[name]; prev != nil {
 		// Same final path: the rename already replaced the body on disk.
-		c.lru.Remove(prev.elem)
-		if !prev.negative {
+		if prev.negative {
+			c.neg.Remove(prev.elem)
+		} else {
+			c.lru.Remove(prev.elem)
 			c.size -= prev.size
 		}
 		delete(c.entries, name)
@@ -364,12 +385,33 @@ func (c *cache) removeLocked(name string) {
 	if !ok {
 		return
 	}
-	c.lru.Remove(e.elem)
 	delete(c.entries, name)
-	if !e.negative {
+	if e.negative {
+		c.neg.Remove(e.elem)
+	} else {
+		c.lru.Remove(e.elem)
 		c.size -= e.size
 		// Open handles keep reading the unlinked inode.
 		_ = os.Remove(e.path)
+	}
+}
+
+// sweepNegatives drops every negative entry older than negative_ttl. The
+// module runs it on a timer, so an idle process does not keep the day's
+// misses; inserts run it as well.
+func (c *cache) sweepNegatives() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.sweepNegativesLocked(c.now())
+}
+
+func (c *cache) sweepNegativesLocked(now time.Time) {
+	for back := c.neg.Back(); back != nil; back = c.neg.Back() {
+		e := back.Value.(*entry)
+		if now.Sub(e.fetchedAt) < c.opts.negativeTTL {
+			return
+		}
+		c.removeLocked(e.key)
 	}
 }
 

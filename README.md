@@ -86,11 +86,16 @@ metadata. The module needs `s3:GetObject` on the keys and, for `keepalive`,
 | `cache_max_size` | `512MiB` | LRU bound on cached bytes (`KiB`/`MiB`/`GiB`/`KB`/`MB`/`GB` or bytes) |
 | `revalidate_after` | `60s` | serve from cache this long before a conditional GET |
 | `negative_ttl` | `30s` | remember a 404 this long |
+| `negative_max_entries` | `4096` | bound on remembered 404s; the oldest is forgotten first, and expired ones are swept every `negative_ttl` |
 | `keepalive` | `25s` | interval of a `HeadBucket` that keeps the TLS connection warm; `off` disables |
 | `max_idle_conns` | `16` | pooled connections to S3 |
 
 ### Semantics worth knowing
 
+- Misses are bounded on their own: they carry no bytes, so `cache_max_size`
+  does not limit them. At most `negative_max_entries` are kept, each for
+  `negative_ttl`. Keys longer than S3's limit of 1 024 bytes (prefix
+  included) are refused as invalid without asking S3.
 - `Stat` and `Open` are answered from the same cached copy, so `Last-Modified`
   and Caddy's ETag (mtime + size) follow the object's `Last-Modified`.
 - A replaced object (same key, new ETag) becomes visible at the next
