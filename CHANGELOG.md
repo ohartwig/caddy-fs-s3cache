@@ -3,6 +3,12 @@
 All notable changes to this project are documented here. The format follows
 Keep a Changelog; versions are cut by yasrt from Conventional Commits.
 
+## [1.0.15](https://git.ole-hartwig.eu/ai-ready-platform/platform/caddy-fs-s3cache/compare/v1.0.14...v1.0.15) (2026-11-05)
+
+### :bug: Fixes
+
+* **security:** AUD-023 F01 — bound and expire negative cache entries ([b9d5640](https://git.ole-hartwig.eu/ai-ready-platform/platform/caddy-fs-s3cache/commit/b9d56400c92656dc10425dc75b31e36aabea7107))
+
 ## [1.0.14](https://git.ole-hartwig.eu/ai-ready-platform/platform/caddy-fs-s3cache/compare/v1.0.13...v1.0.14) (2026-11-04)
 
 ### :repeat: Chores
