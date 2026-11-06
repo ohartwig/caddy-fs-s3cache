@@ -3,6 +3,12 @@
 All notable changes to this project are documented here. The format follows
 Keep a Changelog; versions are cut by yasrt from Conventional Commits.
 
+## [1.0.19](https://git.ole-hartwig.eu/ai-ready-platform/platform/caddy-fs-s3cache/compare/v1.0.18...v1.0.19) (2026-11-06)
+
+### :repeat: Chores
+
+* **deps:** update dependency registry.ole-hartwig.eu/devops/images/franken-php/ci to v3.2.139-8.5 ([3389eed](https://git.ole-hartwig.eu/ai-ready-platform/platform/caddy-fs-s3cache/commit/3389eed995ef57177d42855c81b728ac57504531))
+
 ## [1.0.18](https://git.ole-hartwig.eu/ai-ready-platform/platform/caddy-fs-s3cache/compare/v1.0.17...v1.0.18) (2026-11-06)
 
 ### :repeat: Chores
