@@ -8,7 +8,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/credentials v1.20.14
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.114.7
 	github.com/aws/smithy-go v1.28.8
-	github.com/caddyserver/caddy/v2 v2.11.7
+	github.com/caddyserver/caddy/v2 v2.11.9
 	go.uber.org/zap v1.28.0
 	golang.org/x/sync v0.24.0
 )
