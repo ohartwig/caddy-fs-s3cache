@@ -3,6 +3,16 @@
 All notable changes to this project are documented here. The format follows
 Keep a Changelog; versions are cut by yasrt from Conventional Commits.
 
+## [1.0.16](https://git.ole-hartwig.eu/ai-ready-platform/platform/caddy-fs-s3cache/compare/v1.0.15...v1.0.16) (2026-11-06)
+
+### :bug: Fixes
+
+* **deps:** update aws-sdk-go-v2 monorepo ([10d7a8a](https://git.ole-hartwig.eu/ai-ready-platform/platform/caddy-fs-s3cache/commit/10d7a8adc43fbbfa6184fada302df60ca39ba85d))
+
+### :repeat: Chores
+
+* **deps:** update dependency registry.ole-hartwig.eu/devops/images/franken-php/ci to v3.2.136-8.5 ([2f75822](https://git.ole-hartwig.eu/ai-ready-platform/platform/caddy-fs-s3cache/commit/2f7582290527aaf942345d4aec49dd3f4f34a74c))
+
 ## [1.0.15](https://git.ole-hartwig.eu/ai-ready-platform/platform/caddy-fs-s3cache/compare/v1.0.14...v1.0.15) (2026-11-05)
 
 ### :bug: Fixes
