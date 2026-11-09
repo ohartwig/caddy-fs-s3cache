@@ -3,6 +3,12 @@
 All notable changes to this project are documented here. The format follows
 Keep a Changelog; versions are cut by yasrt from Conventional Commits.
 
+## [1.0.34](https://git.ole-hartwig.eu/ai-ready-platform/platform/caddy-fs-s3cache/compare/v1.0.33...v1.0.34) (2026-11-09)
+
+### :repeat: Chores
+
+* **repo-templates:** sync ([ccdb821](https://git.ole-hartwig.eu/ai-ready-platform/platform/caddy-fs-s3cache/commit/ccdb821c274de5bf8d68e011829d927bd2870634))
+
 ## [1.0.33](https://git.ole-hartwig.eu/ai-ready-platform/platform/caddy-fs-s3cache/compare/v1.0.32...v1.0.33) (2026-11-07)
 
 ### :bug: Fixes
