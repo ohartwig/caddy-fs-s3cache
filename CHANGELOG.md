@@ -3,6 +3,12 @@
 All notable changes to this project are documented here. The format follows
 Keep a Changelog; versions are cut by yasrt from Conventional Commits.
 
+## [1.0.37](https://git.ole-hartwig.eu/ai-ready-platform/platform/caddy-fs-s3cache/compare/v1.0.36...v1.0.37) (2026-11-10)
+
+### :bug: Fixes
+
+* **deps:** update module golang.org/x/sync to v0.25.0 ([fe3b8d7](https://git.ole-hartwig.eu/ai-ready-platform/platform/caddy-fs-s3cache/commit/fe3b8d7b4a85430d09ede098f23e84215affe6e7))
+
 ## [1.0.36](https://git.ole-hartwig.eu/ai-ready-platform/platform/caddy-fs-s3cache/compare/v1.0.35...v1.0.36) (2026-11-09)
 
 ### :repeat: Chores
