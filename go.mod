@@ -10,7 +10,7 @@ require (
 	github.com/aws/smithy-go v1.28.8
 	github.com/caddyserver/caddy/v2 v2.11.9
 	go.uber.org/zap v1.28.0
-	golang.org/x/sync v0.24.0
+	golang.org/x/sync v0.25.0
 )
 
 require (
