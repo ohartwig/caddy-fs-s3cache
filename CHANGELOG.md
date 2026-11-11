@@ -3,6 +3,12 @@
 All notable changes to this project are documented here. The format follows
 Keep a Changelog; versions are cut by yasrt from Conventional Commits.
 
+## [1.0.39](https://git.ole-hartwig.eu/ai-ready-platform/platform/caddy-fs-s3cache/compare/v1.0.38...v1.0.39) (2026-11-11)
+
+### :repeat: Chores
+
+* **deps:** update module golang.org/x/crypto to v0.59.0 [security] ([5649b2d](https://git.ole-hartwig.eu/ai-ready-platform/platform/caddy-fs-s3cache/commit/5649b2db8a2bf05e54f92bbd1e10883c30da0039))
+
 ## [1.0.38](https://git.ole-hartwig.eu/ai-ready-platform/platform/caddy-fs-s3cache/compare/v1.0.37...v1.0.38) (2026-11-11)
 
 ### :bug: Fixes
