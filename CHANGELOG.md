@@ -3,6 +3,12 @@
 All notable changes to this project are documented here. The format follows
 Keep a Changelog; versions are cut by yasrt from Conventional Commits.
 
+## [1.0.38](https://git.ole-hartwig.eu/ai-ready-platform/platform/caddy-fs-s3cache/compare/v1.0.37...v1.0.38) (2026-11-11)
+
+### :bug: Fixes
+
+* **deps:** update module github.com/aws/smithy-go to v1.28.9 ([d5ed189](https://git.ole-hartwig.eu/ai-ready-platform/platform/caddy-fs-s3cache/commit/d5ed189e5253f3c6b5823995aa927d28a651d94d))
+
 ## [1.0.37](https://git.ole-hartwig.eu/ai-ready-platform/platform/caddy-fs-s3cache/compare/v1.0.36...v1.0.37) (2026-11-10)
 
 ### :bug: Fixes
