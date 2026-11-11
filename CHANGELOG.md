@@ -3,6 +3,12 @@
 All notable changes to this project are documented here. The format follows
 Keep a Changelog; versions are cut by yasrt from Conventional Commits.
 
+## [1.0.40](https://git.ole-hartwig.eu/ai-ready-platform/platform/caddy-fs-s3cache/compare/v1.0.39...v1.0.40) (2026-11-11)
+
+### :bug: Fixes
+
+* **deps:** update aws-sdk-go-v2 monorepo ([625d5de](https://git.ole-hartwig.eu/ai-ready-platform/platform/caddy-fs-s3cache/commit/625d5def708acb4df243b72654f1963d275b82b3))
+
 ## [1.0.39](https://git.ole-hartwig.eu/ai-ready-platform/platform/caddy-fs-s3cache/compare/v1.0.38...v1.0.39) (2026-11-11)
 
 ### :repeat: Chores
