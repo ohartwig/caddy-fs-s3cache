@@ -3,6 +3,12 @@
 All notable changes to this project are documented here. The format follows
 Keep a Changelog; versions are cut by yasrt from Conventional Commits.
 
+## [1.0.46](https://git.ole-hartwig.eu/ai-ready-platform/platform/caddy-fs-s3cache/compare/v1.0.45...v1.0.46) (2026-11-23)
+
+### :repeat: Chores
+
+* **deps:** update lefthook hook images ([ef3fdcb](https://git.ole-hartwig.eu/ai-ready-platform/platform/caddy-fs-s3cache/commit/ef3fdcb07d7d071520dcd2c553704062447609e8))
+
 ## [1.0.45](https://git.ole-hartwig.eu/ai-ready-platform/platform/caddy-fs-s3cache/compare/v1.0.44...v1.0.45) (2026-11-21)
 
 ### :bug: Fixes
